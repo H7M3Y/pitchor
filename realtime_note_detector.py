@@ -39,7 +39,7 @@ def pitch_callback(frame, pitch_detector):
     pitch_value = pitch_detector(signal)[0]
 
     # Filter out harmonics by considering only pitches within a certain range
-    if 100 < pitch_value < 600:
+    if 110 < pitch_value < 1760:
         # Print the detected pitch
         s = f"[#>_] {hz_to_note_and_octave(pitch_value)} : {pitch_value:.2f} Hz |"
         print(f"{s:24}{show(recent_notes)}   ", end='\r')
