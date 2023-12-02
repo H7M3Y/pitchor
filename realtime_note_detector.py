@@ -36,7 +36,7 @@ def pitch_callback(frame, pitch_detector):
     signal = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32768.0
 
     # Use the pitch detection algorithm from aubio
-    pitch_value = pitch_detector(signal)[0]*2
+    pitch_value = pitch_detector(signal)[0]
 
     # Filter out harmonics by considering only pitches within a certain range
     if 160 < pitch_value < 1800:
