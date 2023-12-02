@@ -1,5 +1,5 @@
 # note-detector
-Simple but highly useful music note detector with an aesthetical oneline appearance
+Simple but highly useful realtime music note detector with an aesthetical oneline appearance
 
 ## Require
 libraries: numpy, pyaudio, aubio
