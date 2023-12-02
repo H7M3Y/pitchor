@@ -11,11 +11,11 @@ libraries: numpy, pyaudio, aubio
 Also a microphone :)
 
 ## Roadmap
-[x] Get pitch
-[x] Convert to note
-[x] Solve precision issue
-[x] Solve ambient noise issue
-[x] Add an waterfall layout and a buffer to stabilize vibrate notes, which make this script truly practical
-[x] beautify its appearance
-[x] Solve the `Rest` issue
-[ ] Outputs to file
+- [x] Get pitch
+- [x] Convert to note
+- [x] Solve precision issue
+- [x] Solve ambient noise issue
+- [x] Add an waterfall layout and a buffer to stabilize vibrate notes, which make this script truly practical
+- [x] beautify its appearance
+- [x] Solve the `Rest` issue
+- [ ] Outputs to file
