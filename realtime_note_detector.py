@@ -61,7 +61,7 @@ def main():
     chunk_size = 1024
     format = pyaudio.paInt16
     channels = 1
-    sample_rate = 48000
+    sample_rate = 44100
 
     # Initialize PyAudio
     p = pyaudio.PyAudio()
