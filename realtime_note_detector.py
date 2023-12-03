@@ -6,7 +6,6 @@ import aubio
 import numpy as np
 import statistics
 from collections import deque
-from itertools import filterfalse
 
 size = 1024
 rate = 44100
@@ -29,7 +28,7 @@ def store(s):
 
 def update(ct):
     global buf, lmt
-    valid = filterfalse(lambda x: x != 'Rest', buf)
+    valid = [n for n in buf if n != 'Rest']
     if len(valid) < len(buf)/2:
         return
     n = statistics.mode(valid)
