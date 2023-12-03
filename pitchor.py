@@ -49,7 +49,7 @@ def update(ct):
     fall.appendleft(n); lmt = lt
 
 def toNote(pitch):
-    note = 12 * math.log2(pitch / 440) + 69
+    note = 12 * math.log2(pitch / 440) + 69.5
     octave = int(note // 12) - 1
     note_in_octave = int(note % 12)
     notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
