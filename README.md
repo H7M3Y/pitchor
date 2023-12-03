@@ -19,3 +19,4 @@ Also a microphone :)
 - [x] beautify its appearance
 - [x] Solve the `Rest` issue
 - [ ] Outputs to file
+- [x] Custom arguments
