@@ -1,103 +1,83 @@
-#!/usr/bin/env python3
-
+#!/bin/python
 import math
-import statistics
 import time
-import numpy as np
 import pyaudio
 import aubio
+import numpy as np
+import statistics
 from collections import deque
+from itertools import filterfalse
 
-recent_notes = deque(maxlen=25)
+size = 1024
+rate = 44100
+delta = 0.2
+remain = 3.2
 
-def hz_to_note_and_octave(frequency, reference_frequency=440, reference_note=69):
-    note = 12 * math.log2(frequency / reference_frequency) + reference_note
-    octave = int(note // 12 - 1)
+fall = deque(maxlen=int(remain*(1/delta))); p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1, rate=rate, input=True)
+detor = aubio.pitch("yin", size, size, rate)
+detor.set_silence(-50)
+print("Listening for real-time pitch detection...")
+
+buf = []; lt = time.time(); lmt=lt
+def store(s):
+    global buf, lt
+    buf.append(s); ct = time.time()
+    if ct - lt > delta:
+        update(ct)
+        buf = []; lt = math.floor(ct*(1/delta))/(1/delta)
+
+def update(ct):
+    global buf, lmt
+    valid = filterfalse(lambda x: x != 'Rest', buf)
+    if len(valid) < len(buf)/2:
+        return
+    n = statistics.mode(valid)
+    missed = int(min(ct-lmt, remain)//delta)-2
+    for _ in range(0, missed):
+        fall.appendleft('Rest')
+    fall.appendleft(n); lmt = lt
+
+def toNote(pitch):
+    note = 12 * math.log2(pitch / 440) + 69
+    octave = int(note // 12) - 1
     note_in_octave = int(note % 12)
     notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    return store(F"{notes[note_in_octave]}{octave}")
-
-buffer, btime = [], 0.2
-last_time = 0
-def store(note):
-    global buffer, last_time
-    buffer.append(note); ct = time.time()
-    if(ct - last_time >= btime):
-        n_last_time = math.floor(ct*5)/5
-        missed = int(min(n_last_time - last_time, 5)//0.2) - 1
-        for _ in range(0, missed):
-            recent_notes.appendleft('Rest')
-        recent_notes.appendleft(statistics.mode(buffer))
-        buffer = []; last_time = n_last_time
-    return note
-
-def pitch_callback(frame, pitch_detector):
-    # Convert the frame to a NumPy array of floats in the range [-1, 1]
-    signal = np.frombuffer(frame, dtype=np.int16).astype(np.float32) / 32768.0
-
-    # Use the pitch detection algorithm from aubio
-    pitch_value = pitch_detector(signal)[0]
-
-    # Filter out harmonics by considering only pitches within a certain range
-    if 110 < pitch_value < 1760:
-        # Print the detected pitch
-        s = f"[#>_] {hz_to_note_and_octave(pitch_value)} : {pitch_value:.2f} Hz |"
-        print(f"{s:24}{show(recent_notes)}   ", end='\r')
-
-def show(deq):
-    res, last = '', ''
-    for i in deq:
-        if i == 'Rest':
-            res += ' x'
-        elif i == last:
-            res += ' -'
-        else:
-            res += ' ' + i
-        last = i
+    res = f"{notes[note_in_octave]}{octave}"
+    store(res)
     return res
 
-def main():
-    # Parameters
-    chunk_size = 1024
-    format = pyaudio.paInt16
-    channels = 1
-    sample_rate = 44100
+def pitch_det(source):
+    signal = np.frombuffer(source, dtype=np.int16).astype(np.float32)
+    pitch = detor(signal)[0]
+    if 110 < pitch < 1760:
+        s =  f"[#>_] {toNote(pitch)} : {pitch:.2f} Hz | "
+        s = f"{s:25}{show(fall)}"
+        print(s + ' '*(pitch_det.last_s_len-len(s)), end='\r')
+        pitch_det.last_s_len = len(s)
+    else:
+        store('Rest')
+pitch_det.last_s_len = 0
 
-    # Initialize PyAudio
-    p = pyaudio.PyAudio()
+def show(d):
+    res = ''; prev = ''
+    for i in d:
+        if i == 'Rest':
+            res += 'x '
+        elif i == prev:
+            res += '- '
+        else:
+            res += i + ' '
+        prev = i
+    return res
 
-    # Open a stream
-    stream = p.open(
-        format=format,
-        channels=channels,
-        rate=sample_rate,
-        input=True,
-        frames_per_buffer=chunk_size
-    )
-
-    # Initialize the pitch detector from aubio with adjusted parameters
-    pitch_detector = aubio.pitch("yin", 2048, 1024, sample_rate)
-    pitch_detector.set_unit("Hz")
-    pitch_detector.set_silence(-40)
-
-    print("Listening for real-time pitch detection...")
-
-    try:
-        global last_time
-        last_time = time.time()
-        while True:
-            # Read audio data from the stream
-            frame = stream.read(chunk_size)
-            pitch_callback(frame, pitch_detector)
-
-    except KeyboardInterrupt:
-        print("Program terminated by user.")
-
-    finally:
-        # Close the stream and PyAudio
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
-
-if __name__ == "__main__":
-    main()
+try:
+    while True:
+        pitch_det(stream.read(size))
+except KeyboardInterrupt:
+    print(end='\r')
+    print("[xxx]\nProgram terminated by user.")
+finally:
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
