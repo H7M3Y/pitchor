@@ -5,12 +5,23 @@ import pyaudio
 import aubio
 import numpy as np
 import statistics
+import argparse
 from collections import deque
 
-size = 1024
-rate = 44100
-delta = 0.2
-remain = 3.2
+parser = argparse.ArgumentParser(description='Simple but practical real-time music note detector')
+parser.add_argument('-s', "--size", default=1024, help='the number of samples collected at a delta time.')
+parser.add_argument('-r', "--rate", default=44100, help='microphone sampling rate')
+parser.add_argument('-d', "--delta", default=0.2, help='time duration of a single detection (unit: s. the same below)')
+parser.add_argument('-R', '--remain', default=3.2, help='time that the detected notes remain')
+parser.add_argument('-l', '--lowest', default=110, help='lower bound of detection')
+parser.add_argument('-u', '--uppest', default=1760, help='upper bound of detection')
+a = parser.parse_args()
+
+size = int(a.size)
+rate = int(a.rate)
+delta = float(a.delta)
+remain = float(a.remain)
+lb, ub = float(a.lowest), float(a.uppest)
 
 fall = deque(maxlen=int(remain*(1/delta))); p = pyaudio.PyAudio()
 stream = p.open(format=pyaudio.paInt16, channels=1, rate=rate, input=True)
@@ -49,7 +60,7 @@ def toNote(pitch):
 def pitch_det(source):
     signal = np.frombuffer(source, dtype=np.int16).astype(np.float32)
     pitch = detor(signal)[0]
-    if 110 < pitch < 1760:
+    if lb < pitch < ub:
         s =  f"[#>_] {toNote(pitch)} : {pitch:.2f} Hz | "
         s = f"{s:25}{show(fall)}"
         print(s + ' '*(pitch_det.last_s_len-len(s)), end='\r')
