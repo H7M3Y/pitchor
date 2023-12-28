@@ -1,4 +1,4 @@
-# note-detector
+# pitchor 
 Simple but practical real-time music note detector with an aesthetical oneline appearance:
 
 ```
